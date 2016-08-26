@@ -11,8 +11,7 @@ var path = "";	// STUDENT: set to "" to run on your computer, "/" for submitting
 
 var camera, scene, renderer, stats;
 var cameraControls;
-var jsondata;
-
+var alldata;
 var clock = new THREE.Clock();
 var group = new THREE.Group();
 
@@ -50,7 +49,7 @@ function init() {
 	stats.domElement.children[ 0 ].children[ 1 ].style.display = "none";
 
 	// CAMERA
-	camera = new THREE.PerspectiveCamera( 55, canvasRatio, 2, 8000 );
+	camera = new THREE.PerspectiveCamera( 10, canvasRatio, 2, 1000 );
 	camera.position.set( 10, 5, 15 );
 
 	// CONTROLS
@@ -87,34 +86,40 @@ function fillScene() {
 	async: false,
 	dataType: 'json',
 	success: function (data) {
-		var n = data.pdata.x.length;
+		var n = data.timedata[1].x.length;
+		alldata = data;
+
 		var textureLoader = new THREE.TextureLoader();
 		var mapC = textureLoader.load( "disc.png" );
-		var material = new THREE.SpriteMaterial( { map: mapC, color: 0xff0000, fog: true } );
-		for (var i = 1; i < n; i++){
-			var sprite = new THREE.Sprite( material );
-			sprite.position.set( 10*data.pdata.x[i], data.pdata.y[i], data.pdata.z[i] );
-			sprite.scale.x = 10*data.pdata.r[i] ;
-			sprite.scale.y = 10*data.pdata.r[i] ;
-			sprite.scale.z = 10*data.pdata.r[i] ;
-			group.add( sprite );	
-		}
+		var t = 99;
+			for (var i = 1; i < n; i++){
+				var material = new THREE.SpriteMaterial( { map: mapC, fog: false } );
+				material.color.setRGB( 1-data.timedata[t].r[i]/0.005, data.timedata[t].r[i]/0.005,1)
+				var sprite = new THREE.Sprite(material);
+				sprite.position.set( data.timedata[t].x[i], data.timedata[t].y[i], data.timedata[t].z[i] );
+				sprite.scale.x = data.timedata[t].r[i] ;
+				sprite.scale.y = data.timedata[t].r[i] ;
+				sprite.scale.z = data.timedata[t].r[i] ;
+				group.add( sprite );	
+			}
 		scene.add( group );
 	}
-	
-
 	})
 }
+
 
 function animate() {
 	window.requestAnimationFrame(animate);
 	render();
 }
 
+function loadData(){
+
+}
+
 function render() {
 	var delta = clock.getDelta();
 	cameraControls.update(delta);
-
 	renderer.render(scene, camera);
 	stats.update();
 }
