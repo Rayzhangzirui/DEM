@@ -12,9 +12,7 @@ var path = "";	// STUDENT: set to "" to run on your computer, "/" for submitting
 var camera, scene, renderer, stats;
 var cameraControls;
 var alldata;
-var clock = new THREE.Clock();
-var group = new THREE.Group();
-
+var timestep = 0;
 
 function init() {
 	var canvasWidth = window.innerWidth;
@@ -62,9 +60,7 @@ function init() {
 function fillScene() {
 	scene = new THREE.Scene();
 	var loader = new THREE.STLLoader();
-
 	var geometry = new THREE.Geometry();
-
 	var filename;
 	// $.ajax({
 	// 	url: "stl/",
@@ -80,30 +76,13 @@ function fillScene() {
 	// 	}
 	// });
 
-
 	$.ajax({
 	url: 'data.json',
 	async: false,
 	dataType: 'json',
 	success: function (data) {
-		var n = data.timedata[1].x.length;
-		alldata = data;
-
-		var textureLoader = new THREE.TextureLoader();
-		var mapC = textureLoader.load( "disc.png" );
-		var t = 99;
-			for (var i = 1; i < n; i++){
-				var material = new THREE.SpriteMaterial( { map: mapC, fog: false } );
-				material.color.setRGB( 1-data.timedata[t].r[i]/0.005, data.timedata[t].r[i]/0.005,1)
-				var sprite = new THREE.Sprite(material);
-				sprite.position.set( data.timedata[t].x[i], data.timedata[t].y[i], data.timedata[t].z[i] );
-				sprite.scale.x = data.timedata[t].r[i] ;
-				sprite.scale.y = data.timedata[t].r[i] ;
-				sprite.scale.z = data.timedata[t].r[i] ;
-				group.add( sprite );	
+				alldata = data;
 			}
-		scene.add( group );
-	}
 	})
 }
 
@@ -113,14 +92,45 @@ function animate() {
 	render();
 }
 
-function loadData(){
 
+var clock = new THREE.Clock();
+var group = new THREE.Group();
+var textureLoader = new THREE.TextureLoader();
+var mapC = textureLoader.load( "ball.png" );
+
+
+function updateScene(t){
+	group.children = [];
+	scene.remove(group);
+	var n = alldata.timedata[t].x.length;
+			for (var i= 0; i < n; i++){
+				var material = new THREE.SpriteMaterial( { map: mapC, fog: false } );
+				material.color.setRGB( 1-alldata.timedata[t].r[i]/0.005, alldata.timedata[t].r[i]/0.005,1)
+				var sprite = new THREE.Sprite(material);
+				sprite.position.set( alldata.timedata[t].x[i], alldata.timedata[t].y[i], alldata.timedata[t].z[i] );
+				sprite.scale.x = alldata.timedata[t].r[i] ;
+				sprite.scale.y = alldata.timedata[t].r[i] ;
+				sprite.scale.z = alldata.timedata[t].r[i] ;
+				group.add( sprite );	
+			}
+		scene.add( group );
+}
+
+function updateT(t) {
+	if (t < 99) {
+		t++;
+	} else {
+		t = 0;
+	}
+	return t;
 }
 
 function render() {
 	var delta = clock.getDelta();
 	cameraControls.update(delta);
 	renderer.render(scene, camera);
+	timestep = updateT(timestep);
+	updateScene(timestep);
 	stats.update();
 }
 
