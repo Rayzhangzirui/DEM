@@ -9,10 +9,19 @@
 
 var path = "";	// STUDENT: set to "" to run on your computer, "/" for submitting code to Udacity
 
-var camera, scene, renderer, stats;
-var cameraControls;
-var alldata;
+var camera, scene, renderer, stats, alldata;
+var cameraControls, effectController;
 var timestep = 0;
+var clock = new THREE.Clock();
+var group = new THREE.Group();
+var textureLoader = new THREE.TextureLoader();
+var mapC = textureLoader.load( "ball.png" );
+var newTime = 0, oldTime = 0;
+
+
+init();
+animate();
+
 
 function init() {
 	var canvasWidth = window.innerWidth;
@@ -30,18 +39,12 @@ function init() {
 	var container = document.getElementById('container');
 	container.appendChild( renderer.domElement );
 
-	renderer.gammaInput = true;
-	renderer.gammaOutput = true;
-
 	// STATS
-
 	stats = new Stats();
-	stats.setMode( 0 );
 	stats.domElement.style.position = 'absolute';
 	stats.domElement.style.top = '0px';
 	stats.domElement.style.zIndex = 100;
 	container.appendChild( stats.domElement );
-
 	stats.domElement.children[ 0 ].children[ 0 ].style.color = "#aaa";
 	stats.domElement.children[ 0 ].style.background = "transparent";
 	stats.domElement.children[ 0 ].children[ 1 ].style.display = "none";
@@ -54,7 +57,22 @@ function init() {
 	cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
 	cameraControls.target.set(0,0,0);
 
+	setupGui();
 	fillScene();
+}
+
+function setupGui() {
+
+	effectController = {
+		pause: false,
+		fps: 10
+	};
+
+	var gui = new dat.GUI();
+	// material (attributes)
+	gui.add( effectController, "pause" );
+	gui.add( effectController, "fps", 1.0,10.0).step(1.0);;
+
 }
 
 function fillScene() {
@@ -92,18 +110,11 @@ function animate() {
 	render();
 }
 
-
-var clock = new THREE.Clock();
-var group = new THREE.Group();
-var textureLoader = new THREE.TextureLoader();
-var mapC = textureLoader.load( "ball.png" );
-
-
 function updateScene(t){
 	group.children = [];
 	scene.remove(group);
 	var n = alldata.timedata[t].x.length;
-			for (var i= 0; i < n; i++){
+			for (var i= 0; i < 1000; i++){
 				var material = new THREE.SpriteMaterial( { map: mapC, fog: false } );
 				material.color.setRGB( 1-alldata.timedata[t].r[i]/0.005, alldata.timedata[t].r[i]/0.005,1)
 				var sprite = new THREE.Sprite(material);
@@ -127,12 +138,18 @@ function updateT(t) {
 
 function render() {
 	var delta = clock.getDelta();
-	cameraControls.update(delta);
-	renderer.render(scene, camera);
-	timestep = updateT(timestep);
-	updateScene(timestep);
-	stats.update();
+	cameraControls.update( delta );
+	renderer.render( scene, camera );
+	if (!effectController.pause){
+		newTime += delta;
+		if ( newTime > oldTime + 1/effectController.fps ) {
+			oldTime = newTime;
+
+			timestep = updateT(timestep);
+			updateScene(timestep);
+			stats.update();
+		}
+	}
+		
 }
 
-init();
-animate();
