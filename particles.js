@@ -24,6 +24,8 @@ animate();
 
 
 function init() {
+	scene = new THREE.Scene();
+
 	var canvasWidth = window.innerWidth;
 	var canvasHeight = window.innerHeight;
 	var canvasRatio = canvasWidth / canvasHeight;
@@ -34,7 +36,7 @@ function init() {
 	renderer.gammaInput = true;
 	renderer.gammaOutput = true;
 	renderer.setSize(canvasWidth, canvasHeight);
-	// renderer.setClearColorHex( 0x0, 1.0 );
+	renderer.setClearColor( 0xf0f0f0 );
 
 	var container = document.getElementById('container');
 	container.appendChild( renderer.domElement );
@@ -48,17 +50,33 @@ function init() {
 	stats.domElement.children[ 0 ].children[ 0 ].style.color = "#aaa";
 	stats.domElement.children[ 0 ].style.background = "transparent";
 	stats.domElement.children[ 0 ].children[ 1 ].style.display = "none";
-
+	// grid
+	var size = 1, step = 0.1;
+	var geometry = new THREE.Geometry();
+	for ( var i = - size; i <= size; i += step ) {
+		geometry.vertices.push( new THREE.Vector3( - size, i, 0 ) );
+		geometry.vertices.push( new THREE.Vector3(   size, i, 0 ) );
+		geometry.vertices.push( new THREE.Vector3( i,- size,0 ) );
+		geometry.vertices.push( new THREE.Vector3( i, size,0 ) );
+	}
+	var material = new THREE.LineBasicMaterial( { color: 0x000000, opacity: 0.2 } );
+	var line = new THREE.LineSegments( geometry, material );
+	scene.add( line );
 	// CAMERA
-	camera = new THREE.PerspectiveCamera( 10, canvasRatio, 2, 1000 );
-	camera.position.set( 10, 5, 15 );
+	camera = new THREE.PerspectiveCamera( 1, canvasRatio, 2, 1000 );
+	camera.up = new THREE.Vector3( 0, 0, 1 )
+	camera.position.set( 20, -20, 20 );
 
+	// camera = new THREE.OrthographicCamera( -1,1,1,-1, 500, -500 );
+	// camera.up = new THREE.Vector3( 0, 0, 1 )
+	// camera.position.set( 1,-1,1 );
+	// camera.lookAt( scene.position );
 	// CONTROLS
 	cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
 	cameraControls.target.set(0,0,0);
 
 	setupGui();
-	fillScene();
+	load();
 }
 
 function setupGui() {
@@ -75,27 +93,9 @@ function setupGui() {
 
 }
 
-function fillScene() {
-	scene = new THREE.Scene();
-	var loader = new THREE.STLLoader();
-	var geometry = new THREE.Geometry();
-	var filename;
-	// $.ajax({
-	// 	url: "stl/",
-	// 	async:false,
-	// 	success: function(data){
-	// 	var stlmaterial = new THREE.MeshBasicMaterial( { color: 0xD3D3D3} );
-	// 		$(data).find('a').each(function (){
-	// 		filename = $(this).attr("href");
-	// 	  	loader.load( 'stl/'+filename, function ( geometry ) {
-	// 			scene.add( new THREE.Mesh( geometry,stlmaterial) );
-	// 	  	})
-	// 	 })
-	// 	}
-	// });
-
+function load() {	
 	$.ajax({
-	url: 'data.json',
+	url: 'https://dl.dropboxusercontent.com/s/47t1zbfskt9eqcn/data.json?dl=0',
 	async: false,
 	dataType: 'json',
 	success: function (data) {
