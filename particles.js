@@ -10,14 +10,14 @@
 var path = "";	// STUDENT: set to "" to run on your computer, "/" for submitting code to Udacity
 
 var camera, scene, renderer, stats, alldata;
-var cameraControls, effectController;
-var timestep = 0;
-var clock = new THREE.Clock();
 var group = new THREE.Group();
+	var timestep = 0;
+
+var cameraControls, effectController;
+var clock = new THREE.Clock();
 var textureLoader = new THREE.TextureLoader();
 var mapC = textureLoader.load( "ball.png" );
 var newTime = 0, oldTime = 0;
-
 
 init();
 animate();
@@ -74,8 +74,12 @@ function init() {
 	// CONTROLS
 	cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
 	cameraControls.target.set(0,0,0);
-
+	
+	var axisHelper = new THREE.AxisHelper( 5 );
+	scene.add( axisHelper );
+	
 	setupGui();
+	drawflume()
 	load();
 }
 
@@ -93,9 +97,24 @@ function setupGui() {
 
 }
 
+function drawflume(){
+	var flumeMaterial = new THREE.MeshBasicMaterial( {color:0x708090,side: THREE.DoubleSide } );
+	var slope = new THREE.Mesh( new THREE.PlaneGeometry( 1,0.06), flumeMaterial );
+	slope.rotation.y = 20* Math.PI /180;
+	slope.position.set( -0.5, 0 , 0.182 );
+	scene.add( slope );
+	// container
+	var container = new THREE.Mesh( new THREE.PlaneGeometry( 0.5,0.5), flumeMaterial );
+	container.position.set( 0.25, 0 , -0.0025 );
+	scene.add( container );
+	//slope sidewall
+
+}
+
 function load() {	
 	$.ajax({
 	url: 'https://dl.dropboxusercontent.com/s/47t1zbfskt9eqcn/data.json?dl=0',
+	// url: 'data.json',
 	async: false,
 	dataType: 'json',
 	success: function (data) {
@@ -113,15 +132,15 @@ function animate() {
 function updateScene(t){
 	group.children = [];
 	scene.remove(group);
+	var Smaterial = new THREE.SpriteMaterial( { map: mapC, color: 0x4682B4} );
+	var Lmaterial = new THREE.SpriteMaterial( { map: mapC, color: 0xB22222} );
 	var n = alldata.timedata[t].x.length;
-			for (var i= 0; i < 1000; i++){
-				var material = new THREE.SpriteMaterial( { map: mapC, fog: false } );
-				material.color.setRGB( 1-alldata.timedata[t].r[i]/0.005, alldata.timedata[t].r[i]/0.005,1)
-				var sprite = new THREE.Sprite(material);
+			for (var i= 0; i < 4000; i++){
+				var sprite = (alldata.timedata[t].r[i] >= 0.003)? new THREE.Sprite(Lmaterial): new THREE.Sprite(Smaterial); 
 				sprite.position.set( alldata.timedata[t].x[i], alldata.timedata[t].y[i], alldata.timedata[t].z[i] );
-				sprite.scale.x = alldata.timedata[t].r[i] ;
-				sprite.scale.y = alldata.timedata[t].r[i] ;
-				sprite.scale.z = alldata.timedata[t].r[i] ;
+				sprite.scale.x = 2*alldata.timedata[t].r[i] ;
+				sprite.scale.y = 2*alldata.timedata[t].r[i] ;
+				sprite.scale.z = 2*alldata.timedata[t].r[i] ;
 				group.add( sprite );	
 			}
 		scene.add( group );
@@ -140,11 +159,11 @@ function render() {
 	var delta = clock.getDelta();
 	cameraControls.update( delta );
 	renderer.render( scene, camera );
+
 	if (!effectController.pause){
 		newTime += delta;
-		if ( newTime > oldTime + 1/effectController.fps ) {
+		if ( newTime > oldTime + 0.95/effectController.fps ) {
 			oldTime = newTime;
-
 			timestep = updateT(timestep);
 			updateScene(timestep);
 			stats.update();
